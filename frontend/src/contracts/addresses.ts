@@ -1,5 +1,13 @@
 import { Address } from 'viem'
 
+// 池子信息
+export interface PoolInfo {
+  token0: Address
+  token1: Address
+  fee: number
+  pool: Address
+}
+
 // 合约地址配置
 // 部署后更新这些地址
 export const CONTRACTS: Record<number, {
@@ -8,8 +16,8 @@ export const CONTRACTS: Record<number, {
   Factory: Address
   Manager: Address
   Quoter: Address
-  // 部署区块号，用于事件查询优化
-  deploymentBlock?: bigint
+  // 已知的池子列表（避免事件查询限制）
+  pools?: PoolInfo[]
 }> = {
   // 本地开发链 (Anvil) - 部署后更新
   31337: {
@@ -26,7 +34,15 @@ export const CONTRACTS: Record<number, {
     Factory: '0xb0186Aa717a2073dbfE3d3cDD7426095ffE3957b' as Address,
     Manager: '0x6e5A9Fb05Bfaa2de92745336fA999B07924aE2d0' as Address,
     Quoter: '0x0000000000000000000000000000000000000000' as Address,
-    deploymentBlock: 10440121n, // 部署区块号，从该区块开始查询事件
+    // 已知的池子（USDC/WETH 0.3%）
+    pools: [
+      {
+        token0: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address, // USDC (地址较小)
+        token1: '0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address, // WETH
+        fee: 3000,
+        pool: '0xb5fAD4ff7D1B7463200C650F50854A0D9E6f9551' as Address,
+      }
+    ],
   },
 }
 

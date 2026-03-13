@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { usePublicClient } from 'wagmi'
-import { Address, parseEventLogs } from 'viem'
-import { factoryAbi } from '@/contracts/abis/factory'
+import { Address } from 'viem'
 import { TOKEN_SYMBOLS, CONTRACTS } from '@/contracts/addresses'
 import { PathFinder, Pair, PathElement } from '@/lib/pathFinder'
 
@@ -25,65 +24,38 @@ export function usePairs() {
       try {
         setIsLoading(true)
 
-        // 获取 Factory 地址
+        // 获取当前链 ID
         const chainId = await publicClient.getChainId()
-        const factoryAddress = CONTRACTS[chainId]?.Factory
-        const deploymentBlock = CONTRACTS[chainId]?.deploymentBlock
+        const config = CONTRACTS[chainId]
 
-        if (!factoryAddress) {
-          console.warn('Factory address not configured for chain', chainId)
+        if (!config) {
+          console.warn('Contract config not found for chain', chainId)
           setPairs([])
           setIsLoading(false)
           return
         }
 
-        // 获取 PoolCreated 事件日志
-        // 使用部署区块作为起始点，避免查询过多区块导致超时
-        const fromBlock = deploymentBlock || 0n
-        console.log('Fetching logs from factory:', factoryAddress, 'from block:', fromBlock.toString())
-        const logs = await publicClient.getLogs({
-          address: factoryAddress,
-          event: {
-            type: 'event',
-            name: 'PoolCreated',
-            inputs: [
-              { indexed: true, name: 'token0', type: 'address' },
-              { indexed: true, name: 'token1', type: 'address' },
-              { indexed: true, name: 'fee', type: 'uint24' },
-              { indexed: false, name: 'pool', type: 'address' },
-            ],
-          },
-          fromBlock,
-          toBlock: 'latest',
-        })
-        console.log('Raw logs:', logs)
-
-        // 解析事件日志
-        const parsedPairs: Pair[] = logs.map((log) => {
-          const token0 = log.args.token0 as Address
-          const token1 = log.args.token1 as Address
-          const fee = Number(log.args.fee)
-          const pool = log.args.pool as Address
-
-          return {
+        // 直接使用配置中的池子列表，避免事件查询限制
+        if (config.pools && config.pools.length > 0) {
+          const parsedPairs: Pair[] = config.pools.map((poolInfo) => ({
             token0: {
-              address: token0,
-              symbol: TOKEN_SYMBOLS[token0] || 'Unknown',
+              address: poolInfo.token0,
+              symbol: TOKEN_SYMBOLS[poolInfo.token0] || 'Unknown',
             },
             token1: {
-              address: token1,
-              symbol: TOKEN_SYMBOLS[token1] || 'Unknown',
+              address: poolInfo.token1,
+              symbol: TOKEN_SYMBOLS[poolInfo.token1] || 'Unknown',
             },
-            fee,
-            address: pool,
-          }
-        })
+            fee: poolInfo.fee,
+            address: poolInfo.pool,
+          }))
 
-        setPairs(parsedPairs)
-
-        // 创建 PathFinder 实例
-        if (parsedPairs.length > 0) {
+          console.log('Loaded pools from config:', parsedPairs)
+          setPairs(parsedPairs)
           setPathFinder(new PathFinder(parsedPairs))
+        } else {
+          console.log('No pools configured for chain', chainId)
+          setPairs([])
         }
       } catch (err) {
         console.error('Failed to load pairs:', err)
