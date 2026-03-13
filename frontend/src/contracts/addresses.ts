@@ -19,10 +19,10 @@ export const CONTRACTS: Record<number, {
   },
   // Sepolia 测试网
   11155111: {
-    WETH: '0x0000000000000000000000000000000000000000' as Address,
-    USDC: '0x0000000000000000000000000000000000000000' as Address,
-    Factory: '0x0000000000000000000000000000000000000000' as Address,
-    Manager: '0x0000000000000000000000000000000000000000' as Address,
+    WETH: '0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address,
+    USDC: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address,
+    Factory: '0xb0186Aa717a2073dbfE3d3cDD7426095ffE3957b' as Address,
+    Manager: '0x6e5A9Fb05Bfaa2de92745336fA999B07924aE2d0' as Address,
     Quoter: '0x0000000000000000000000000000000000000000' as Address,
   },
 }
@@ -32,6 +32,9 @@ export const TOKEN_SYMBOLS: Record<Address, string> = {
   // 本地测试代币
   ['0x4A679253410272dd5232B3Ff7cF5dbB88f295319' as Address]: 'WETH',
   ['0x7a2088a1bFc9d81c55368AE168C2C02570cB814F' as Address]: 'USDC',
+  // Sepolia 测试代币
+  ['0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address]: 'WETH',
+  ['0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address]: 'USDC',
 }
 
 // Fee 到 tickSpacing 映射
