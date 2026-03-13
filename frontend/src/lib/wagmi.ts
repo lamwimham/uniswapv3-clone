@@ -12,12 +12,15 @@ export const localhost = {
   },
 } as const
 
+// Sepolia RPC URL - 使用 Alchemy 公共 RPC 或自定义
+const SEPOLIA_RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/HEJJz2H5mUF0LDkviAOGk'
+
 export const config = createConfig({
-  chains: [localhost, sepolia],
+  chains: [sepolia, localhost], // Sepolia 为默认链
   connectors: [injected(), metaMask()],
   transports: {
+    [sepolia.id]: http(SEPOLIA_RPC_URL),
     [localhost.id]: http('http://localhost:8545'),
-    [sepolia.id]: http(),
   },
 })
 
