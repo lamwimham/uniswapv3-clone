@@ -28,6 +28,7 @@ export function usePairs() {
         // 获取 Factory 地址
         const chainId = await publicClient.getChainId()
         const factoryAddress = CONTRACTS[chainId]?.Factory
+        const deploymentBlock = CONTRACTS[chainId]?.deploymentBlock
 
         if (!factoryAddress) {
           console.warn('Factory address not configured for chain', chainId)
@@ -37,7 +38,9 @@ export function usePairs() {
         }
 
         // 获取 PoolCreated 事件日志
-        console.log('Fetching logs from factory:', factoryAddress)
+        // 使用部署区块作为起始点，避免查询过多区块导致超时
+        const fromBlock = deploymentBlock || 0n
+        console.log('Fetching logs from factory:', factoryAddress, 'from block:', fromBlock.toString())
         const logs = await publicClient.getLogs({
           address: factoryAddress,
           event: {
@@ -50,7 +53,7 @@ export function usePairs() {
               { indexed: false, name: 'pool', type: 'address' },
             ],
           },
-          fromBlock: 0n,
+          fromBlock,
           toBlock: 'latest',
         })
         console.log('Raw logs:', logs)

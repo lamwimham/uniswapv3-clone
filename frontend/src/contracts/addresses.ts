@@ -8,6 +8,8 @@ export const CONTRACTS: Record<number, {
   Factory: Address
   Manager: Address
   Quoter: Address
+  // 部署区块号，用于事件查询优化
+  deploymentBlock?: bigint
 }> = {
   // 本地开发链 (Anvil) - 部署后更新
   31337: {
@@ -24,6 +26,7 @@ export const CONTRACTS: Record<number, {
     Factory: '0xb0186Aa717a2073dbfE3d3cDD7426095ffE3957b' as Address,
     Manager: '0x6e5A9Fb05Bfaa2de92745336fA999B07924aE2d0' as Address,
     Quoter: '0x0000000000000000000000000000000000000000' as Address,
+    deploymentBlock: 10440121n, // 部署区块号，从该区块开始查询事件
   },
 }
 
