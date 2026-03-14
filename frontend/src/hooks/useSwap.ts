@@ -6,12 +6,13 @@ import { managerAbi } from '@/contracts/abis/manager'
 import { erc20Abi } from '@/contracts/abis/erc20'
 import { Address, maxUint256, parseEther, encodeAbiParameters } from 'viem'
 import { CONTRACTS } from '@/contracts/addresses'
-import { encodePath, PathElement } from '@/lib/pathFinder'
-import { getPoolAddress } from '@/lib/getPoolAddress'
 import { useChainId } from 'wagmi'
 
 interface SwapParams {
-  path: PathElement[]
+  poolAddress: Address
+  tokenIn: Address
+  tokenOut: Address
+  fee: number
   amountIn: string
   minAmountOut: string
 }
@@ -75,42 +76,36 @@ export function useSwap(): UseSwapReturn {
     try {
       setError(null)
 
-      const encodedPath = encodePath(params.path)
       const amountInBigInt = parseEther(params.amountIn)
-      const minAmountOutBigInt = parseEther(params.minAmountOut)
 
-      // 从路径中提取代币地址 - 路径格式为 [tokenA, fee, tokenB, fee, tokenC, ...]
-      // 第一个元素是起始代币，最后一个元素是结束代币
-      const tokenInAddress = params.path[0] as Address
-      const tokenOutAddress = params.path[params.path.length - 1] as Address
+      // 确定交换方向：zeroForOne = tokenIn < tokenOut
+      const zeroForOne = params.tokenIn < params.tokenOut
 
-      // 构建回调数据 (tokenIn, tokenOut, player 地址)
-      // player 是用户地址，用于从用户账户转移 token 到池子
+      // 构建回调数据 (token0, token1, player)
+      // 注意：token0 和 token1 需要按地址排序
+      const token0 = params.tokenIn < params.tokenOut ? params.tokenIn : params.tokenOut
+      const token1 = params.tokenIn < params.tokenOut ? params.tokenOut : params.tokenIn
+
       const data = encodeAbiParameters(
         [
           { name: 'token0', type: 'address' },
           { name: 'token1', type: 'address' },
           { name: 'player', type: 'address' }
         ],
-        [tokenInAddress, tokenOutAddress, address]
+        [token0, token1, address]
       ) as `0x${string}`
 
-      // 注意：这里需要使用工厂合约和代币地址计算池子地址
-      // 但实际的 swap 函数可能需要不同的实现
-      // 由于 Manager 合约的 swap 函数可能需要直接的池子地址，我们暂时使用硬编码的池子地址
-      // 后续需要根据实际合约实现来调整
-      // 注意：这里使用 getPoolAddress 函数，它需要 publicClient，但我们没有
-      // 所以暂时使用一个占位符，实际实现需要从工厂合约获取池子地址
-      // const poolAddress = await getPoolAddress(publicClient, factoryAddress, tokenInAddress, tokenOutAddress, params.fee)
-      // 临时使用一个占位符地址，实际实现需要从工厂合约获取池子地址
-      const poolAddress = '0x0000000000000000000000000000000000000000' as Address // 临时占位符
+      // amountSpecified 是 int256 类型，传入正数表示输入金额
+      const amountSpecified = BigInt(amountInBigInt.toString())
 
       await writeContractAsync({
         address: managerAddress,
         abi: managerAbi,
         functionName: 'swap',
         args: [
-          poolAddress,
+          params.poolAddress,
+          zeroForOne,
+          amountSpecified,
           data
         ],
       })

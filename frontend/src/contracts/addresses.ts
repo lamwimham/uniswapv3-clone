@@ -33,7 +33,7 @@ export const CONTRACTS: Record<number, {
     USDC: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address,
     Factory: '0xb0186Aa717a2073dbfE3d3cDD7426095ffE3957b' as Address,
     Manager: '0x6e5A9Fb05Bfaa2de92745336fA999B07924aE2d0' as Address,
-    Quoter: '0x0000000000000000000000000000000000000000' as Address,
+    Quoter: '0x3FD77b81F523a854a988fb0bdC756e6EDAC20134' as Address,
     // 已知的池子（USDC/WETH 0.3%）
     pools: [
       {

@@ -6,10 +6,9 @@ import { Address, formatEther, parseEther } from 'viem'
 import { TokenInput } from './TokenInput'
 import { TokenSelect } from './TokenSelect'
 import { SlippageControl } from './SlippageControl'
-import { usePairs, useTokens, usePath, useQuote, useSwap, useTokenApproval, useTokenBalance } from '@/hooks'
+import { usePairs, useTokens, useQuoteByTokens, useSwap, useTokenApproval, useTokenBalance } from '@/hooks'
 import { CONTRACTS } from '@/contracts/addresses'
 import { debounce } from '@/lib/utils'
-import { PathElement } from '@/lib/pathFinder'
 
 interface Token {
   address: Address
@@ -28,13 +27,14 @@ export function SwapForm() {
   const [tokenOut, setTokenOut] = useState<Token | undefined>()
 
   // Hooks
-  const { pairs, isLoading: pairsLoading, pathFinder } = usePairs()
+  const { pairs, isLoading: pairsLoading } = usePairs()
   const tokens = useTokens(pairs)
-  const { path, error: pathError } = usePath(
-    pathFinder,
-    tokenIn?.address,
-    tokenOut?.address
-  )
+
+  // 获取池子费率（默认 0.3%）
+  const poolFee = pairs.find(
+    p => (p.token0.address === tokenIn?.address && p.token1.address === tokenOut?.address) ||
+         (p.token0.address === tokenOut?.address && p.token1.address === tokenIn?.address)
+  )?.fee || 3000
 
   // 报价 (防抖)
   const [debouncedAmountIn, setDebouncedAmountIn] = useState('')
@@ -49,8 +49,11 @@ export function SwapForm() {
     debouncedSetAmountIn(amountIn)
   }, [amountIn, debouncedSetAmountIn])
 
-  const { amountOut: quoteAmountOut, isLoading: quoteLoading } = useQuote(
-    path,
+  // 使用新的报价 hook
+  const { amountOut: quoteAmountOut, isLoading: quoteLoading } = useQuoteByTokens(
+    tokenIn?.address,
+    tokenOut?.address,
+    poolFee,
     debouncedAmountIn
   )
 
@@ -83,11 +86,30 @@ export function SwapForm() {
 
   // 处理 Swap
   const handleSwap = async () => {
-    if (!tokenIn || !tokenOut || !amountIn || path.length === 0) return
+    if (!tokenIn || !tokenOut || !amountIn) return
 
     try {
+      // 计算最小输出（考虑滑点）
       const minAmountOut = (parseFloat(amountOut) * (100 - slippage) / 100).toFixed(18)
-      await swap({ path, amountIn, minAmountOut })
+
+      // 获取池子地址
+      const pair = pairs.find(
+        p => (p.token0.address === tokenIn?.address && p.token1.address === tokenOut?.address) ||
+             (p.token0.address === tokenOut?.address && p.token1.address === tokenIn?.address)
+      )
+
+      if (!pair) {
+        throw new Error('Pool not found')
+      }
+
+      await swap({
+        poolAddress: pair.address,
+        tokenIn: tokenIn.address,
+        tokenOut: tokenOut.address,
+        fee: pair.fee,
+        amountIn,
+        minAmountOut
+      })
       setAmountIn('')
       setAmountOut('')
     } catch (err) {
@@ -206,6 +228,16 @@ export function SwapForm() {
             excludeTokens={tokenIn ? [tokenIn.address] : []}
           />
 
+          {/* Price Info */}
+          {amountIn && amountOut && (
+            <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50 rounded-xl px-4 py-3">
+              <span>Price</span>
+              <span className="font-medium text-gray-700">
+                1 {tokenIn?.symbol} = {(parseFloat(amountOut) / parseFloat(amountIn)).toFixed(6)} {tokenOut?.symbol}
+              </span>
+            </div>
+          )}
+
           {/* Slippage */}
           <div className="pt-4">
             <SlippageControl
@@ -214,30 +246,6 @@ export function SwapForm() {
               disabled={!isConnected || isLoading}
             />
           </div>
-
-          {/* Route Info */}
-          {path.length > 3 && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-xl px-4 py-3">
-              <span className="font-medium">Route:</span>
-              <span className="text-gray-700">
-                {path.map((p, i) =>
-                  i % 2 === 0
-                    ? tokens.find(t => t.address === p)?.symbol || '...'
-                    : `(${Number(p)/10000}%)`
-                ).join(' → ')}
-              </span>
-            </div>
-          )}
-
-          {/* Error */}
-          {pathError && (
-            <div className="flex items-center gap-2 text-red-500 bg-red-50 rounded-xl px-4 py-3 text-sm">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {pathError.message}
-            </div>
-          )}
 
           {/* Action Button */}
           <div className="pt-2">

@@ -1,6 +1,6 @@
 // 统一导出所有 hooks
 export { usePairs, useTokens, usePath } from './usePairs'
-export { useQuote, useQuoteSingle } from './useQuote'
+export { useQuoteByPool, useQuoteByTokens } from './useQuote'
 export { useTokenApproval, useTokenBalance, useTokenInfo } from './useTokenApproval'
 export { useSwap } from './useSwap'
 export { useAddLiquidity } from './useAddLiquidity'
