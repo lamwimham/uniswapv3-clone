@@ -41,10 +41,10 @@ contract InitializePool is Script {
 
         // 3. 添加流动性
         // 池子初始价格 = 1，tick = 0
-        // 使用 tick 0 附近的较小范围避免溢出
-        int24 lowerTick = -100;    // 约价格 0.99
-        int24 upperTick = 100;     // 约价格 1.01
-        uint128 liquidity = 100000000000000000; // 流动性数量
+        // 使用更大的流动性，价格区间设置为 [-1000, 1000]（约 ±10%）
+        int24 lowerTick = -1000;
+        int24 upperTick = 1000;
+        uint128 liquidity = 100000000000000000000; // 更大的流动性
 
         bytes memory callbackData = abi.encode(
             UniswapV3Pool.CallbackData({
