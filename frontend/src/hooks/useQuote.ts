@@ -31,7 +31,7 @@ export function useQuoteByPool(
     address: quoterAddress as Address,
     abi: quoterAbi,
     functionName: 'quoteStatic',
-    args: [poolAddress, zeroForOne, amountInBigInt],
+    args: [poolAddress!, zeroForOne, amountInBigInt],
     query: {
       enabled: amountInBigInt > 0n && !!poolAddress && !!quoterAddress,
     },

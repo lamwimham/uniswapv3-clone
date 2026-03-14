@@ -66,7 +66,9 @@ contract DeploySepolia is Script {
             token0,
             token1,
             INITIAL_SQRT_PRICE_X96,
-            INITIAL_TICK
+            INITIAL_TICK,
+            FEE,
+            60 // tickSpacing for 0.3% fee
         );
         console.log("Pool deployed at:", address(pool));
         console.log("Pool sqrtPriceX96:", INITIAL_SQRT_PRICE_X96);
