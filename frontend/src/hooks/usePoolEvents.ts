@@ -43,9 +43,13 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
     setError(null)
 
     try {
-      // 获取最近的区块（限制查询范围）
+      // 获取最近的区块
       const latestBlock = await publicClient.getBlockNumber()
-      const fromBlock = 0n  // 从区块0开始查询
+      // Alchemy 免费版限制最多查询 10 个区块，这里查询最近 5 个区块
+      // 实际事件主要依赖实时监听，历史事件只作为补充
+      const fromBlock = latestBlock > 5n ? latestBlock - 5n : 0n
+
+      console.log('[usePoolEvents] Fetching events from block', fromBlock, 'to', latestBlock, 'for pool', poolAddress)
 
       // 获取各种事件
       const [mintLogs, burnLogs, swapLogs, collectLogs] = await Promise.all([
@@ -54,26 +58,28 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
           event: parseAbiItem('event Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)'),
           fromBlock,
           toBlock: 'latest',
-        }),
+        }).catch(e => { console.error('[usePoolEvents] Mint logs error:', e); return [] }),
         publicClient.getLogs({
           address: poolAddress,
           event: parseAbiItem('event Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)'),
           fromBlock,
           toBlock: 'latest',
-        }),
+        }).catch(e => { console.error('[usePoolEvents] Burn logs error:', e); return [] }),
         publicClient.getLogs({
           address: poolAddress,
           event: parseAbiItem('event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint256 sqrtPriceX96, uint128 liquidity, int24 tick)'),
           fromBlock,
           toBlock: 'latest',
-        }),
+        }).catch(e => { console.error('[usePoolEvents] Swap logs error:', e); return [] }),
         publicClient.getLogs({
           address: poolAddress,
           event: parseAbiItem('event Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint256 amount0, uint256 amount1)'),
           fromBlock,
           toBlock: 'latest',
-        }),
+        }).catch(e => { console.error('[usePoolEvents] Collect logs error:', e); return [] }),
       ])
+
+      console.log('[usePoolEvents] Fetched logs:', { mintLogs: mintLogs.length, burnLogs: burnLogs.length, swapLogs: swapLogs.length, collectLogs: collectLogs.length })
 
       const allEvents: PoolEvent[] = []
 
@@ -175,7 +181,7 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
   // 初始加载
   useEffect(() => {
     fetchHistoricalEvents()
-  }, [poolAddress, enabled])
+  }, [poolAddress, enabled, publicClient])
 
   // 实时监听 Mint 事件
   useWatchContractEvent({
@@ -183,6 +189,7 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
     abi: poolAbi,
     eventName: 'Mint',
     onLogs(logs) {
+      console.log('[usePoolEvents] Received Mint logs:', logs.length)
       logs.forEach((log) => {
         const newEvent: PoolEvent = {
           type: 'Mint',
@@ -211,6 +218,7 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
     abi: poolAbi,
     eventName: 'Swap',
     onLogs(logs) {
+      console.log('[usePoolEvents] Received Swap logs:', logs.length)
       logs.forEach((log) => {
         const newEvent: PoolEvent = {
           type: 'Swap',
@@ -239,6 +247,7 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
     abi: poolAbi,
     eventName: 'Burn',
     onLogs(logs) {
+      console.log('[usePoolEvents] Received Burn logs:', logs.length)
       logs.forEach((log) => {
         const newEvent: PoolEvent = {
           type: 'Burn',
@@ -266,6 +275,7 @@ export function usePoolEvents(options: UsePoolEventsOptions): UsePoolEventsRetur
     abi: poolAbi,
     eventName: 'Collect',
     onLogs(logs) {
+      console.log('[usePoolEvents] Received Collect logs:', logs.length)
       logs.forEach((log) => {
         const newEvent: PoolEvent = {
           type: 'Collect',

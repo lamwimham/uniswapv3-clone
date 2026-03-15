@@ -48,10 +48,10 @@ library Math {
     }
 
     /**
-    # When amount_in is token0
+    # When amount_in is token0 (zeroForOne = true)
       price_next = int((liq * q96 * sqrtp_cur) // (liq * q96 + amount_in * sqrtp_cur))
-      # When amount_in is token1
-      price_next = sqrtp_cur + (amount_in * q96) // liq
+      # When amount_in is token1 (zeroForOne = false)
+      price_next = sqrtp_cur - (amount_in * q96) // liq
     */
     function getNextSqrtPriceFromInput(
         uint160 sqrtPriceCurrentX96,
@@ -103,6 +103,11 @@ library Math {
         uint128 liquidity,
         uint256 amountIn
     ) internal pure returns (uint160) {
+        // When swapping token1 for token0:
+        // - token1 enters pool, token0 leaves pool
+        // - token1/token0 ratio INCREASES (token0 becomes more valuable)
+        // - sqrtPrice = sqrt(token1/token0) INCREASES
+        // sqrtPriceNext = sqrtPriceCurrent + (amountIn * Q96) / liquidity
         return
             sqrtPriceX96 +
             uint160((amountIn << FixedPoint96.RESOLUTION) / liquidity);
