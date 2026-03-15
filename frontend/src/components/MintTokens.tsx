@@ -39,6 +39,7 @@ export function MintTokens() {
         abi: mintableErc20Abi,
         functionName: 'mint',
         args: [address, parseEther(amount)],
+        gas: 200000n,
       })
     } catch (error) {
       console.error('Error minting tokens:', error)

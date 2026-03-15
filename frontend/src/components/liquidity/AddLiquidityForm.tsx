@@ -73,14 +73,14 @@ export function AddLiquidityForm({ token0, token1, fee, onClose }: AddLiquidityF
   const { needsApproval: needsApproval0 } = useTokenApproval({
     tokenAddress: token0.address,
     spender: managerAddress, // 授权给 Manager 合约
-    amount: parseEther("0.998976618347425280"), // 硬编码的 amount0
+    amount: amount0 ? parseEther(amount0) : 0n,
   })
 
   // TODO: 硬编码授权检查 - 后续需改为动态值
   const { needsApproval: needsApproval1 } = useTokenApproval({
     tokenAddress: token1.address,
     spender: managerAddress, // 授权给 Manager 合约
-    amount: parseEther("5000"), // 硬编码的 amount1
+    amount: amount1 ? parseEther(amount1) : 0n,
   })
 
   const { mint, approve, isPending, isConfirming, isSuccess, error } = useAddLiquidity()
@@ -88,12 +88,12 @@ export function AddLiquidityForm({ token0, token1, fee, onClose }: AddLiquidityF
   const handleAddLiquidity = async () => {
     try {
       // TODO: 硬编码参数以跑通流程 - 后续需改为动态值
-      const amount0BigInt = parseEther("0.998976618347425280") // 0.998... ETH
-      const amount1BigInt = parseEther("5000") // 5000 USDC
-      const lowerTick = 84222
-      const upperTick = 86129
+      const amount0BigInt = parseEther(amount0)
+      const amount1BigInt = parseEther(amount1)
+      const { lowerTick, upperTick } = ticks!
+      
       // 计算流动性值 (这里使用硬编码的值，实际应根据金额计算)
-      const liquidity = 1000000n // 硬编码流动性值
+      const liquidity = amount0BigInt < amount1BigInt ? amount0BigInt : amount1BigInt
       
       // 构建回调数据 (token0, token1, player 地址)
       // player 是用户地址，用于从用户账户转移 token 到池子
@@ -138,15 +138,15 @@ export function AddLiquidityForm({ token0, token1, fee, onClose }: AddLiquidityF
 
   // 添加流动性成功后的回调
   useEffect(() => {
-    if (isSuccess) {
+    if (isSuccess && amount0 && amount1) {
       const newPosition = {
         tokenA: token0.address,
         tokenB: token1.address,
         fee,
-        lowerTick: 84222,
-        upperTick: 86129,
-        amount0: parseEther("0.998976618347425280").toString(), // 转换为字符串
-        amount1: parseEther("5000").toString(), // 转换为字符串
+        lowerTick: ticks?.lowerTick || 0,
+        upperTick: ticks?.upperTick || 0,
+        amount0: parseEther(amount0).toString(),
+        amount1: parseEther(amount1).toString(),
       }
 
       if (address) {
@@ -158,7 +158,7 @@ export function AddLiquidityForm({ token0, token1, fee, onClose }: AddLiquidityF
         localStorage.setItem(`positions_${address}`, JSON.stringify(updatedPositions))
       }
     }
-  }, [isSuccess, address, token0.address, token1.address, fee])
+  }, [isSuccess, address, token0.address, token1.address, fee, ticks, amount0, amount1])
 
   const handleApprove = async (tokenAddress: Address, amount: string) => {
     if (!managerAddress) {
@@ -166,15 +166,14 @@ export function AddLiquidityForm({ token0, token1, fee, onClose }: AddLiquidityF
     }
     // TODO: 硬编码授权值 - 后续需改为动态值
     if (tokenAddress === token0.address) {
-      await approve(tokenAddress, parseEther("0.998976618347425280"), managerAddress)
+      await approve(tokenAddress, parseEther(amount0), managerAddress)
     } else if (tokenAddress === token1.address) {
-      await approve(tokenAddress, parseEther("5000"), managerAddress)
+      await approve(tokenAddress, parseEther(amount1), managerAddress)
     }
   }
 
   const isLoading = isPending || isConfirming
-  // TODO: 因为使用硬编码值，所以只要连接了钱包且不需要授权就可以添加流动性 - 后续需改为动态判断
-  const canAdd = isConnected && managerAddress && poolAddress && !needsApproval0 && !needsApproval1
+  const canAdd = isConnected && managerAddress && poolAddress && !needsApproval0 && !needsApproval1 && ticks && amount0 && amount1
 
   return (
     <div className="bg-white rounded-3xl shadow-xl overflow-hidden">

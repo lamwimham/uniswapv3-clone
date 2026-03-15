@@ -35,15 +35,12 @@ export function useSwap(): UseSwapReturn {
 
   const [error, setError] = useState<Error | null>(null)
   const [approveHash, setApproveHash] = useState<`0x${string}` | undefined>()
+  const [swapHash, setSwapHash] = useState<`0x${string}` | undefined>()
 
-  const {
-    writeContractAsync,
-    isPending,
-    data: hash,
-  } = useWriteContract()
+  const { writeContractAsync } = useWriteContract()
 
   const { isSuccess: isConfirmed, isLoading: isConfirming } = useWaitForTransactionReceipt({
-    hash,
+    hash: swapHash,
   })
 
   const approve = useCallback(async (tokenAddress: Address, amount: bigint) => {
@@ -58,6 +55,7 @@ export function useSwap(): UseSwapReturn {
         abi: erc20Abi,
         functionName: 'approve',
         args: [managerAddress, amount > 0n ? amount : maxUint256],
+        gas: 100000n,
       })
       setApproveHash(txHash)
       return txHash
@@ -78,27 +76,33 @@ export function useSwap(): UseSwapReturn {
 
       const amountInBigInt = parseEther(params.amountIn)
 
-      // 确定交换方向：zeroForOne = tokenIn < tokenOut
-      const zeroForOne = params.tokenIn < params.tokenOut
+      // 从 Pool 获取正确的 token0 和 token1
+      // Pool 的 token0 是地址较小的那个（按十六进制数值比较）
+      const tokenInLower = params.tokenIn.toLowerCase() as Address
+      const tokenOutLower = params.tokenOut.toLowerCase() as Address
+      const poolToken0 = tokenInLower < tokenOutLower ? params.tokenIn : params.tokenOut
+      const poolToken1 = tokenInLower < tokenOutLower ? params.tokenOut : params.tokenIn
+
+      // 确定交换方向
+      // zeroForOne = true: 用 token0 换 token1
+      // zeroForOne = false: 用 token1 换 token0
+      const zeroForOne = params.tokenIn.toLowerCase() === poolToken0.toLowerCase()
 
       // 构建回调数据 (token0, token1, player)
-      // 注意：token0 和 token1 需要按地址排序
-      const token0 = params.tokenIn < params.tokenOut ? params.tokenIn : params.tokenOut
-      const token1 = params.tokenIn < params.tokenOut ? params.tokenOut : params.tokenIn
-
+      // 必须使用 Pool 的 token0 和 token1 顺序
       const data = encodeAbiParameters(
         [
           { name: 'token0', type: 'address' },
           { name: 'token1', type: 'address' },
           { name: 'player', type: 'address' }
         ],
-        [token0, token1, address]
+        [poolToken0, poolToken1, address]
       ) as `0x${string}`
 
-      // amountSpecified 是 int256 类型，传入正数表示输入金额
-      const amountSpecified = BigInt(amountInBigInt.toString())
+      // amountSpecified 是 uint256 类型
+      const amountSpecified = amountInBigInt
 
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address: managerAddress,
         abi: managerAbi,
         functionName: 'swap',
@@ -108,7 +112,9 @@ export function useSwap(): UseSwapReturn {
           amountSpecified,
           data
         ],
+        gas: 500000n,
       })
+      setSwapHash(txHash)
     } catch (err) {
       console.error('Swap failed:', err)
       setError(err instanceof Error ? err : new Error('Swap failed'))
@@ -119,11 +125,11 @@ export function useSwap(): UseSwapReturn {
   return {
     swap,
     approve,
-    isPending,
+    isPending: isConfirming,
     isConfirming,
     isSuccess: isConfirmed,
     error,
-    hash,
+    hash: swapHash,
     approveHash,
   }
 }

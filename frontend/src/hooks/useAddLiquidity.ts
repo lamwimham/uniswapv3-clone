@@ -55,6 +55,7 @@ export function useAddLiquidity(): UseAddLiquidityReturn {
         abi: erc20Abi,
         functionName: 'approve',
         args: [spenderAddress, amount > 0n ? amount : maxUint256],
+        gas: 100000n,
       })
       return txHash
     } catch (err) {
@@ -83,6 +84,7 @@ export function useAddLiquidity(): UseAddLiquidityReturn {
           params.liquidity,
           params.data
         ],
+        gas: 600000n,
       })
     } catch (err) {
       console.error('Mint failed:', err)

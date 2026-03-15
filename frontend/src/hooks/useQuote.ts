@@ -65,7 +65,7 @@ export function useQuoteByTokens(
     address: quoterAddress as Address,
     abi: quoterAbi,
     functionName: 'quoteByTokens',
-    args: [factoryAddress, tokenIn, tokenOut, fee, amountInBigInt],
+    args: [factoryAddress!, tokenIn!, tokenOut!, fee, amountInBigInt],
     query: {
       enabled:
         amountInBigInt > 0n &&

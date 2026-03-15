@@ -74,7 +74,18 @@ export function SwapForm() {
   })
 
   // Swap
-  const { swap, approve, isPending, isConfirming, isSuccess, error: swapError } = useSwap()
+  const { swap, approve, isPending, isConfirming, isSuccess, error: swapError, hash } = useSwap()
+
+  // 成功后重置
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        setAmountIn('')
+        setAmountOut('')
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess])
 
   // 初始化代币选择
   useEffect(() => {
@@ -292,6 +303,20 @@ export function SwapForm() {
           {swapError && (
             <div className="text-red-500 text-sm text-center py-2">
               {swapError.message}
+            </div>
+          )}
+
+          {/* Transaction Hash */}
+          {hash && (
+            <div className="text-center py-2">
+              <a
+                href={`https://sepolia.etherscan.io/tx/${hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-600 text-sm underline"
+              >
+                在 Sepolia Etherscan 查看交易 →
+              </a>
             </div>
           )}
         </div>

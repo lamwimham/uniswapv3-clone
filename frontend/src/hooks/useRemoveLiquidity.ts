@@ -55,6 +55,7 @@ export function useRemoveLiquidity(): UseRemoveLiquidityReturn {
         abi: poolAbi,
         functionName: 'burn',
         args: [params.lowerTick, params.upperTick, params.amount],
+        gas: 300000n,
       })
       setBurnHash(burnTxHash)
 
@@ -70,6 +71,7 @@ export function useRemoveLiquidity(): UseRemoveLiquidityReturn {
           maxUint128,
           maxUint128,
         ],
+        gas: 300000n,
       })
       setCollectHash(collectTxHash)
     } catch (err) {

@@ -31,16 +31,16 @@ export const CONTRACTS: Record<number, {
   11155111: {
     WETH: '0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address,
     USDC: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address,
-    Factory: '0xb0186Aa717a2073dbfE3d3cDD7426095ffE3957b' as Address,
-    Manager: '0x6e5A9Fb05Bfaa2de92745336fA999B07924aE2d0' as Address,
-    Quoter: '0x3FD77b81F523a854a988fb0bdC756e6EDAC20134' as Address,
+    Factory: '0xFC87F52f1a7aD207dAE17B3a8B8f70fa32f50807' as Address,
+    Manager: '0x2b6a6Ea12439f59cdB174681FB5bB3Db16AAcE96' as Address,
+    Quoter: '0x8BC5F957C2A70C4c1552aF089893DDd3584F1e13' as Address,
     // 已知的池子（USDC/WETH 0.3%）
     pools: [
       {
-        token0: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address, // USDC (地址较小)
-        token1: '0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address, // WETH
+        token0: '0xb7f9c55C8789107B52f400bCDB151a562f355977' as Address, // WETH (地址较小)
+        token1: '0xCBb50DC59f9A67E99DD216651acCaedba56Ee625' as Address, // USDC
         fee: 3000,
-        pool: '0xb5fAD4ff7D1B7463200C650F50854A0D9E6f9551' as Address,
+        pool: '0x461617E76b03A2d9E1a3DBDbE46f54a35c62edC8' as Address,
       }
     ],
   },
