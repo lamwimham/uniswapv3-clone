@@ -28,6 +28,7 @@ contract UniswapV3Pool {
 
     address public immutable token0;
     address public immutable token1;
+    uint24 public immutable fee;
 
     struct Slot0 {
         uint160 sqrtPriceX96;
@@ -38,6 +39,7 @@ contract UniswapV3Pool {
         address token0;
         address token1;
         address player;
+        uint24 fee;
     }
 
     Slot0 public slot0;
@@ -70,10 +72,12 @@ contract UniswapV3Pool {
         address token0_,
         address token1_,
         uint160 sqrtPriceX96_,
-        int24 tick_
+        int24 tick_,
+        uint24 fee_
     ) {
         token0 = token0_;
         token1 = token1_;
+        fee = fee_;
         slot0 = Slot0({sqrtPriceX96: sqrtPriceX96_, tick: tick_});
     }
 

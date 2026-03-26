@@ -32,7 +32,7 @@ contract UniswapV3Factory {
         uint160 currentSqrtP = 79228162514264337593543950336; // sqrt(1.0001^0) * 2^96
         
         // 部署新池子
-        pool = address(new UniswapV3Pool(tokenA, tokenB, currentSqrtP, currentTick));
+        pool = address(new UniswapV3Pool(tokenA, tokenB, currentSqrtP, currentTick, fee));
         
         // 更新存储中的池子地址映射
         getPool[tokenA][tokenB][fee] = pool;

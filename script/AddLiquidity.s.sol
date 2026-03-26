@@ -30,7 +30,8 @@ contract AddLiquidity is Script {
         UniswapV3Pool.CallbackData memory data = UniswapV3Pool.CallbackData({
             token0: USDC,
             token1: WETH,
-            player: msg.sender
+            player: msg.sender,
+            fee: 3000  // 0.3%
         });
         bytes memory encodedData = abi.encode(data);
 

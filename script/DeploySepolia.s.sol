@@ -24,7 +24,7 @@ contract DeploySepolia is Script {
         console.log("Pool address:", pool);
 
         // 3. 部署新管理器
-        UniswapV3Manager manager = new UniswapV3Manager();
+        UniswapV3Manager manager = new UniswapV3Manager(address(factory));
         console.log("Manager address:", address(manager));
 
         // 4. 部署新 Quoter

@@ -50,7 +50,8 @@ contract InitializePool is Script {
             UniswapV3Pool.CallbackData({
                 token0: USDC,  // USDC 地址更小，是 token0
                 token1: WETH,
-                player: msg.sender
+                player: msg.sender,
+                fee: 3000  // 0.3%
             })
         );
 

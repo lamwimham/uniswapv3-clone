@@ -24,7 +24,7 @@ contract RedeployPool is Script {
         console.log("New Pool address", pool);
 
         // 部署新的管理器
-        UniswapV3Manager manager = new UniswapV3Manager();
+        UniswapV3Manager manager = new UniswapV3Manager(address(factory));
         console.log("New Manager address", address(manager));
 
         vm.stopBroadcast();

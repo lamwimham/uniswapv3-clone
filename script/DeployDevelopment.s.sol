@@ -22,7 +22,7 @@ contract DeployDevelopment is Script {
         address pool = factory.createPool(address(token0), address(token1), 3000);
 
         // 部署管理器
-        UniswapV3Manager manager = new UniswapV3Manager();
+        UniswapV3Manager manager = new UniswapV3Manager(address(factory));
 
         console.log("WETH address", address(token0));
         console.log("USDC address", address(token1));

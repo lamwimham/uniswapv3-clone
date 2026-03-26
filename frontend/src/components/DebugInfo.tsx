@@ -12,21 +12,21 @@ export function DebugInfo() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const publicClient = usePublicClient()
-  
+
   const [debugInfo, setDebugInfo] = useState<any>({})
   const [loading, setLoading] = useState(true)
-  const [errors, setErrors] = useState<{weth?: string, usdc?: string, factory?: string}>({})
+  const [errors, setErrors] = useState<{weth?: string, usdc?: string}>({})
 
   useEffect(() => {
     const fetchDebugInfo = async () => {
       if (!address || !publicClient) return
-      
+
       try {
         setLoading(true)
-        
+
         // 获取 ETH 余额
         const ethBalance = await publicClient.getBalance({ address })
-        
+
         // 获取 WETH 余额
         let wethBalance = null
         let wethSymbol = null
@@ -49,7 +49,7 @@ export function DebugInfo() {
             console.error('WETH error:', e)
           }
         }
-        
+
         // 获取 USDC 余额
         let usdcBalance = null
         let usdcSymbol = null
@@ -72,10 +72,10 @@ export function DebugInfo() {
             console.error('USDC error:', e)
           }
         }
-        
-        // 获取 Factory 合约地址
-        const factoryAddress = CONTRACTS[chainId]?.Factory
-        
+
+        // 获取所有合约地址
+        const contracts = CONTRACTS[chainId]
+
         setDebugInfo({
           account: address,
           ethBalance: formatEther(ethBalance),
@@ -83,14 +83,21 @@ export function DebugInfo() {
           wethSymbol: wethSymbol || 'Unknown',
           usdcBalance: usdcBalance ? formatEther(usdcBalance) : null,
           usdcSymbol: usdcSymbol || 'Unknown',
-          factoryAddress,
-          chainId
+          chainId,
+          // 所有合约地址
+          contracts: contracts ? {
+            WETH: contracts.WETH,
+            USDC: contracts.USDC,
+            Factory: contracts.Factory,
+            Manager: contracts.Manager,
+            Quoter: contracts.Quoter,
+            pools: contracts.pools || [],
+          } : null
         })
-        
+
         setErrors({
           weth: wethError || undefined,
           usdc: usdcError || undefined,
-          factory: factoryAddress ? undefined : 'Factory address not configured for this chain'
         })
       } catch (error) {
         console.error('Debug info error:', error)
@@ -143,25 +150,64 @@ export function DebugInfo() {
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-      <h3 className="text-gray-800 font-bold mb-2">调试信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-        <div><strong>账户:</strong> {debugInfo.account}</div>
-        <div><strong>链 ID:</strong> {debugInfo.chainId}</div>
-        <div><strong>ETH 余额:</strong> {debugInfo.ethBalance}</div>
-        <div><strong>{debugInfo.wethSymbol} 余额:</strong> {debugInfo.wethBalance || 'Error'}</div>
-        <div><strong>{debugInfo.usdcSymbol} 余额:</strong> {debugInfo.usdcBalance || 'Error'}</div>
-        <div><strong>Factory 地址:</strong> {debugInfo.factoryAddress || 'Not configured'}</div>
-      </div>
+      <h3 className="text-gray-800 font-bold mb-3">调试信息</h3>
       
-      {(errors.weth || errors.usdc || errors.factory) && (
+      {/* 账户信息 */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">账户信息</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          <div><strong>账户:</strong> <span className="font-mono text-xs">{debugInfo.account}</span></div>
+          <div><strong>链 ID:</strong> {debugInfo.chainId}</div>
+          <div><strong>ETH 余额:</strong> {debugInfo.ethBalance}</div>
+          <div><strong>{debugInfo.wethSymbol} 余额:</strong> {debugInfo.wethBalance || 'Error'}</div>
+          <div><strong>{debugInfo.usdcSymbol} 余额:</strong> {debugInfo.usdcBalance || 'Error'}</div>
+        </div>
+      </div>
+
+      {/* 合约地址 */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">合约地址</h4>
+        {debugInfo.contracts ? (
+          <div className="space-y-2 text-sm">
+            <div className="grid grid-cols-1 gap-1">
+              <div><strong>WETH:</strong> <span className="font-mono text-xs text-blue-600">{debugInfo.contracts.WETH}</span></div>
+              <div><strong>USDC:</strong> <span className="font-mono text-xs text-blue-600">{debugInfo.contracts.USDC}</span></div>
+              <div><strong>Factory:</strong> <span className="font-mono text-xs text-green-600">{debugInfo.contracts.Factory}</span></div>
+              <div><strong>Manager:</strong> <span className="font-mono text-xs text-green-600">{debugInfo.contracts.Manager}</span></div>
+              <div><strong>Quoter:</strong> <span className="font-mono text-xs text-purple-600">{debugInfo.contracts.Quoter}</span></div>
+            </div>
+            
+            {/* 池子地址 */}
+            {debugInfo.contracts.pools && debugInfo.contracts.pools.length > 0 && (
+              <div className="mt-3">
+                <strong className="text-gray-700">已知池子:</strong>
+                <div className="mt-2 space-y-2">
+                  {debugInfo.contracts.pools.map((pool: any, index: number) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded p-2 text-xs">
+                      <div><strong>Pool:</strong> <span className="font-mono text-orange-600">{pool.pool}</span></div>
+                      <div><strong>Token0:</strong> <span className="font-mono">{pool.token0}</span></div>
+                      <div><strong>Token1:</strong> <span className="font-mono">{pool.token1}</span></div>
+                      <div><strong>Fee:</strong> {pool.fee / 10000}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-red-600 text-sm">当前链未配置合约地址</div>
+        )}
+      </div>
+
+      {/* 错误信息 */}
+      {(errors.weth || errors.usdc) && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-xs">
           <h4 className="font-bold text-red-700">错误详情:</h4>
           {errors.weth && <p className="text-red-600"><strong>WETH:</strong> {errors.weth}</p>}
           {errors.usdc && <p className="text-red-600"><strong>USDC:</strong> {errors.usdc}</p>}
-          {errors.factory && <p className="text-red-600"><strong>Factory:</strong> {errors.factory}</p>}
         </div>
       )}
-      
+
       <div className="mt-3 text-xs text-gray-500">
         <p><strong>问题排查提示:</strong></p>
         <ul className="list-disc pl-5 mt-1 space-y-1">

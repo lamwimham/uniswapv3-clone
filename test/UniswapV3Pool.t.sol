@@ -101,7 +101,8 @@ contract UniswapV3PoolTest is Test {
             address(token0),
             address(token1),
             params.currentSqrtP,
-            params.currentTick
+            params.currentTick,
+            3000  // 0.3% fee
         );
 
         // 如果允许添加流动性
@@ -116,7 +117,8 @@ contract UniswapV3PoolTest is Test {
                     UniswapV3Pool.CallbackData({
                         token0: address(token0),
                         token1: address(token1),
-                        player: address(this)
+                        player: address(this),
+                        fee: 3000
                     })
                 )
             );
@@ -141,7 +143,7 @@ contract UniswapV3PoolTest is Test {
 
     // 不合理的tick范围
     function testMintInvalidTickRange() public {
-        pool = new UniswapV3Pool(address(token0), address(token1), 10000, 1000);
+        pool = new UniswapV3Pool(address(token0), address(token1), 10000, 1000, 3000);
         vm.expectRevert(
             abi.encodeWithSelector(UniswapV3Pool.InvalidTickRange.selector)
         );
@@ -150,7 +152,7 @@ contract UniswapV3PoolTest is Test {
 
     // 没有添加流动性
     function testMintZeroLiquidity() public {
-        pool = new UniswapV3Pool(address(token0), address(token1), 10001, 1000);
+        pool = new UniswapV3Pool(address(token0), address(token1), 10001, 1000, 3000);
         vm.expectRevert(
             abi.encodeWithSelector(UniswapV3Pool.ZeroLiquidity.selector)
         );
@@ -160,7 +162,7 @@ contract UniswapV3PoolTest is Test {
     // 输入金额不足
     function testMintInsufficientInputAmount() public {
         // 设置合理的池子参数
-        pool = new UniswapV3Pool(address(token0), address(token1), 110, 85176);
+        pool = new UniswapV3Pool(address(token0), address(token1), 110, 85176, 3000);
 
         // 不转账
         transferInMintCallback = false;
@@ -203,7 +205,8 @@ contract UniswapV3PoolTest is Test {
                 UniswapV3Pool.CallbackData({
                     token0: address(token0),
                     token1: address(token1),
-                    player: address(this)
+                    player: address(this),
+                    fee: 3000
                 })
             )
         );
@@ -280,7 +283,8 @@ contract UniswapV3PoolTest is Test {
                 UniswapV3Pool.CallbackData({
                     token0: address(token0),
                     token1: address(token1),
-                    player: address(this)
+                    player: address(this),
+                    fee: 3000
                 })
             )
         );
